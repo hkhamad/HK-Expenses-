@@ -1,5 +1,5 @@
 // Lets the app open without internet. New versions arrive when you are online.
-var CACHE = "money-tracker-v1";
+var CACHE = "money-tracker-v2";
 var FILES = ["./", "index.html", "manifest.json", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png", "favicon-48.png"];
 
 self.addEventListener("install", function (e) {
@@ -17,7 +17,8 @@ self.addEventListener("activate", function (e) {
 self.addEventListener("fetch", function (e) {
   if (e.request.method !== "GET") return;
   var url = new URL(e.request.url);
-  if (url.origin !== location.origin) return;
+  var isFb = url.hostname === "www.gstatic.com" && url.pathname.indexOf("/firebasejs/") === 0;
+  if (url.origin !== location.origin && !isFb) return;
   // Network first (so updates show up), cache when offline
   e.respondWith(
     fetch(e.request).then(function (res) {

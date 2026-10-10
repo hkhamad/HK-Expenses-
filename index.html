@@ -6,6 +6,7 @@
 <meta name="color-scheme" content="light dark">
 <title>Money Tracker</title>
 <link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
 <meta name="theme-color" content="#000000">
 <meta name="application-name" content="Money Tracker">
 <meta name="mobile-web-app-capable" content="yes">
@@ -175,7 +176,89 @@ function ls(k,v){
  return null;
 }
 function load(){try{data=JSON.parse(ls("hk_data")||"[]")}catch(e){data=[]}}
-function save(){ls("hk_data",JSON.stringify(data))}
+var tomb={},snap={},cloud={user:null,msg:"",last:0,checked:null};
+function clean(d){return JSON.parse(JSON.stringify(d))}
+function sig(d){var c={};for(var k in d)if(k!=="u")c[k]=d[k];return JSON.stringify(c)}
+function loadTomb(){try{tomb=JSON.parse(ls("hk_tomb")||"{}")}catch(e){tomb={}}}
+function initSnap(){snap={};data.forEach(function(d){snap[d.id]=sig(d)})}
+var lastStamp=0;
+function stamp(){var n=Date.now();if(n<=lastStamp)n=lastStamp+1;lastStamp=n;return n}
+function save(){
+ var now=stamp(),ups={},cur={};
+ data.forEach(function(d){
+  cur[d.id]=1;var s=sig(d);
+  if(snap[d.id]!==s){d.u=now;snap[d.id]=s;ups["entries/"+d.id]=clean(d)}
+ });
+ Object.keys(snap).forEach(function(id){if(!cur[id]){delete snap[id];tomb[id]=now;ups["entries/"+id]=null;ups["tomb/"+id]=now}});
+ ls("hk_data",JSON.stringify(data));ls("hk_tomb",JSON.stringify(tomb));
+ if(Object.keys(ups).length)cloudPush(ups);
+}
+function cloudPush(ups){
+ if(!(window.Sync&&Sync.user))return;
+ try{Sync.apply(ups).then(function(){cloud.last=Date.now()},function(e){cloud.msg="Sync problem: "+((e&&e.code)||e)})}catch(e){}
+}
+function mergeRemote(rE,rT){
+ var changed=false,ups={};
+ Object.keys(rT).forEach(function(id){if(!(tomb[id]>=rT[id]))tomb[id]=rT[id]});
+ var byid={};data.forEach(function(d){byid[d.id]=d});
+ Object.keys(rE).forEach(function(id){
+  var r=rE[id];if(!r||typeof r!=="object"||r.id==null)return;
+  var t=tomb[r.id];if(t&&t>(r.u||0))return;
+  var l=byid[r.id];
+  if(!l||(r.u||0)>(l.u||0)){byid[r.id]=r;snap[r.id]=sig(r);changed=true}
+ });
+ Object.keys(byid).forEach(function(id){var d=byid[id],t=tomb[d.id];if(t&&t>(d.u||0)){delete byid[id];delete snap[id];changed=true}});
+ var nd=Object.keys(byid).map(function(k){return byid[k]});
+ nd.forEach(function(d){var r=rE[d.id];if(!r||(d.u||0)>(r.u||0))ups["entries/"+d.id]=clean(d)});
+ Object.keys(tomb).forEach(function(id){if(!(rT[id]>=tomb[id]))ups["tomb/"+id]=tomb[id]});
+ Object.keys(rE).forEach(function(id){var t=tomb[id],r=rE[id];if(t&&r&&t>(r.u||0))ups["entries/"+id]=null});
+ if(changed)data=nd;
+ return {changed:changed,ups:ups};
+}
+function softRender(){if(!state.unlocked)return;if(state.tab==="add"&&state.step)return;render()}
+window.onRemote=function(rE,rT){
+ if(!(window.Sync&&Sync.user))return;
+ if(cloud.checked!==Sync.user.uid){
+  var prev=ls("hk_uid");
+  if(prev&&prev!==Sync.user.uid&&data.length&&!confirm("This phone has data from another Google account. OK = combine it with this account. Cancel = remove it from this phone and load this account only.")){
+   data=[];tomb={};snap={};ls("hk_data","[]");ls("hk_tomb","{}");
+  }
+  ls("hk_uid",Sync.user.uid);cloud.checked=Sync.user.uid;
+ }
+ var res=mergeRemote(rE||{},rT||{});
+ ls("hk_tomb",JSON.stringify(tomb));
+ cloud.last=Date.now();cloud.msg="";
+ if(res.changed){ls("hk_data",JSON.stringify(data));softRender()}
+ else{var e=document.getElementById("cloudLast");if(e)e.textContent=new Date(cloud.last).toLocaleTimeString()}
+ if(Object.keys(res.ups).length)cloudPush(res.ups);
+};
+window.onSyncEvent=function(kind,msg){
+ if(kind==="error"){cloud.msg=msg||"Sync problem";toast(cloud.msg)}
+ cloud.user=window.Sync?Sync.user:null;
+ if(!cloud.user)cloud.checked=null;
+ if(state.tab==="settings")softRender();
+};
+function cloudSignIn(){
+ if(!window.Sync){alert("Sync is not ready. Connect to the internet and reopen the app.");return}
+ cloud.msg="";Sync.signIn();
+}
+function cloudSignOut(){
+ if(!window.Sync)return;
+ if(confirm("Sign out? Your data stays on this phone."))Sync.signOut();
+}
+function cloudSync(){
+ if(!(window.Sync&&Sync.user))return;
+ toast("Syncing...");
+ Sync.refresh().then(function(){toast("Synced")},function(e){toast("Sync problem: "+((e&&e.code)||e))});
+}
+function cloudCard(){
+ var h='<div class="card"><h3>Cloud Sync</h3>';
+ if(!window.Sync)h+='<div class="note" style="margin:0">Sync is not ready. It needs internet the first time. Reopen the app when you are online.</div>';
+ else if(!cloud.user)h+='<div class="note" style="margin:0 0 4px">Sign in with Google to keep your data safe online and see it on any phone.</div><button class="btn sm" onclick="cloudSignIn()">Sign in with Google</button>';
+ else h+='<div class="row2"><span>Signed in as</span><b class="good" style="font-size:13px">'+esc(cloud.user.email||"")+'</b></div><div class="row2"><span>Last sync</span><b id="cloudLast">'+(cloud.last?new Date(cloud.last).toLocaleTimeString():"...")+'</b></div><button class="btn sm" onclick="cloudSync()">Sync Now</button><button class="btn sm ghost" onclick="cloudSignOut()">Sign Out</button>';
+ if(cloud.msg)h+='<div class="note bad">'+esc(cloud.msg)+'</div>';
+ return h+'</div>';
+}
 function rate(){return parseFloat(ls("hk_rate"))||280}
 function rs(n){return "Rs "+Math.round(Math.abs(n)).toLocaleString("en-US")}
 function usd(n){return "$"+Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}
@@ -595,7 +678,7 @@ async function enableFp(){
 }
 function settings(){
  var th=ls("hk_theme")||"auto";
- var h=header("Settings","Theme, security and backup");
+ var h=header("Settings","Sync, theme, security and backup")+cloudCard();
  h+='<div class="card"><h3>Theme</h3><div class="seg">'+[["auto","Auto"],["light","Light"],["dark","Dark"]].map(function(x){return '<button class="'+(th===x[0]?'on':'')+'" onclick="setTheme(\''+x[0]+'\')">'+x[1]+'</button>'}).join("")+'</div><div class="note">Auto follows your phone: dark at night, light in the day.</div></div>';
  h+='<div class="card"><h3>Lock</h3><div class="row2"><span>Password lock</span><b class="'+(hasPw()?'good':'')+'">'+(hasPw()?'ON':'OFF')+'</b></div><div class="row2"><span>Fingerprint</span><b class="'+(hasFp()?'good':'')+'">'+(hasFp()?'ON':'OFF')+'</b></div>';
  h+='<button class="btn sm" onclick="state.lockMode=\'setup-change\';state.unlocked=false;render()">'+(hasPw()?'Change Password':'Set Password')+'</button>';
@@ -607,7 +690,7 @@ function settings(){
  h+='<button class="btn sm" onclick="doBackup()">Save / Share Backup</button><button class="btn sm ghost" onclick="doCsv()">Export for Excel (CSV)</button>';
  h+='<button class="btn sm ghost" onclick="document.getElementById(\'rfile\').click()">Restore from File</button><input id="rfile" type="file" accept=".json,application/json,text/plain" style="display:none" onchange="restoreFile(this)">';
  h+='<button class="btn sm ghost" onclick="toggleRestore()">Restore from Pasted Text</button><div id="rbox" style="display:none;margin-top:10px"><textarea id="rtext" placeholder="Paste your backup text here"></textarea><button class="btn sm" onclick="restorePasted()">Restore</button></div></div>';
- h+='<div class="card"><h3>About</h3><div class="note" style="margin:0">Money Tracker 2.0. Your data stays on this phone only.</div></div>';
+ h+='<div class="card"><h3>About</h3><div class="note" style="margin:0">Money Tracker 2.0. '+(cloud.user?'Your data is saved online in your Google account and on this phone.':'Your data is saved on this phone. Sign in above to keep it online too.')+'</div></div>';
  h+='<button class="btn ghost" onclick="go(\'home\')">Back to Home</button>';
  return h;
 }
@@ -650,10 +733,70 @@ async function boot(){
    try{if(ls(keys[i])===null){var v=await NB.get(keys[i]);if(v!==null&&v!==undefined)localStorage.setItem(keys[i],v)}}catch(e){}
   }
  }
- load();applyTheme();render();
+ load();loadTomb();initSnap();applyTheme();render();
 }
 boot();
 try{if("serviceWorker" in navigator&&location.protocol.indexOf("http")===0)navigator.serviceWorker.register("sw.js")}catch(e){}
+</script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getDatabase, ref, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+
+var firebaseConfig = {
+  apiKey: "AIzaSyD1T9whAGhk1GNVLEhJ-cgCZVz-EOhq1Nc",
+  authDomain: "money-tracker-bd67a.firebaseapp.com",
+  databaseURL: "https://money-tracker-bd67a-default-rtdb.firebaseio.com",
+  projectId: "money-tracker-bd67a",
+  storageBucket: "money-tracker-bd67a.firebasestorage.app",
+  messagingSenderId: "971828439353",
+  appId: "1:971828439353:web:d67b72a0d77029bc36e0e8"
+};
+var app = initializeApp(firebaseConfig), auth = getAuth(app), db = getDatabase(app);
+var unsub = null;
+function ev(k, m) { try { if (window.onSyncEvent) window.onSyncEvent(k, m); } catch (e) {} }
+function why(e) {
+  var c = (e && e.code) || "";
+  if (c === "auth/unauthorized-domain") return "This website address is not allowed yet. In Firebase go to Authentication > Settings > Authorized domains and add it.";
+  if (c === "auth/popup-closed-by-user" || c === "auth/cancelled-popup-request") return "Sign-in was cancelled.";
+  if (c === "auth/network-request-failed") return "No internet connection.";
+  return "Sign-in problem: " + (c || e);
+}
+window.Sync = {
+  user: null,
+  signIn: async function () {
+    var p = new GoogleAuthProvider();
+    p.setCustomParameters({ prompt: "select_account" });
+    try { await signInWithPopup(auth, p); }
+    catch (e) {
+      var c = e && e.code;
+      if (c === "auth/popup-blocked" || c === "auth/operation-not-supported-in-this-environment") {
+        try { await signInWithRedirect(auth, p); return; } catch (e2) { e = e2; }
+      }
+      ev("error", why(e));
+    }
+  },
+  signOut: function () { return signOut(auth); },
+  apply: function (u) { return update(ref(db, "users/" + auth.currentUser.uid), u); },
+  refresh: async function () {
+    var s = await get(ref(db, "users/" + auth.currentUser.uid));
+    var v = s.val() || {};
+    if (window.onRemote) window.onRemote(v.entries || {}, v.tomb || {});
+  }
+};
+getRedirectResult(auth).catch(function (e) { ev("error", why(e)); });
+onAuthStateChanged(auth, function (u) {
+  window.Sync.user = u ? { uid: u.uid, email: u.email, name: u.displayName } : null;
+  if (unsub) { unsub(); unsub = null; }
+  if (u) {
+    unsub = onValue(ref(db, "users/" + u.uid), function (s) {
+      var v = s.val() || {};
+      if (window.onRemote) window.onRemote(v.entries || {}, v.tomb || {});
+    }, function (e) { ev("error", "Sync problem: " + ((e && e.code) || e)); });
+  }
+  ev("auth");
+});
+ev("ready");
 </script>
 </body>
 </html>
