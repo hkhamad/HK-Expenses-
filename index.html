@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Money Tracker</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<meta name="theme-color" content="#000000">
+<meta name="application-name" content="Money Tracker">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Money Tracker">
+<link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png">
+<link rel="touch-icon" href="apple-touch-icon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#0b0f17;--card:#141a26;--text:#eef1f7;--muted:#8793a8;--line:#222b3a;--accent:#5b6cff;--accent2:#8a5bff;--good:#12a05c;--bad:#e5484d;--warn:#f08a24;--chip:#1b2333;--shadow:0 6px 24px rgba(0,0,0,.35)}
+:root[data-theme="light"]{--bg:#f3f5f9;--card:#ffffff;--text:#131a26;--muted:#6f7a8c;--line:#e4e8ef;--accent:#5b6cff;--accent2:#8a5bff;--good:#12a05c;--bad:#e5484d;--warn:#f08a24;--chip:#eef1f7;--shadow:0 6px 24px rgba(30,40,80,.08)}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:96px}
+.wrap{max-width:520px;margin:0 auto;padding:16px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.top h1{font-size:22px;margin:0;letter-spacing:-.3px}
+.top small{color:var(--muted);display:block;font-size:12px}
+.ib{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);display:inline-flex;align-items:center;justify-content:center;margin-left:6px;cursor:pointer}
+.ib svg{width:20px;height:20px}
+.hero{border-radius:22px;padding:22px;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 12px 30px rgba(91,108,255,.35);position:relative;overflow:hidden;margin-bottom:12px}
+.hero.trading{background:linear-gradient(135deg,#0284c7,#1e40af);box-shadow:0 12px 30px rgba(2,132,199,.35)}
+.hero:after{content:"";position:absolute;right:-40px;top:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.12)}
+.hero small{opacity:.85;font-size:12px}
+.hero .big{font-size:34px;font-weight:800;letter-spacing:-1px;margin:4px 0 4px}
+.hero .eq{font-size:13px;opacity:.9;margin-bottom:14px}
+.hero .two{display:flex;gap:8px;margin-top:12px}
+.hero .two div{flex:1;background:rgba(255,255,255,.16);border-radius:14px;padding:10px;min-width:0}
+.hero .two b{display:block;font-size:15px;white-space:nowrap}
+.mini{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow);margin-bottom:12px}
+.card h3{margin:0 0 12px;font-size:15px}
+.stat small{color:var(--muted);font-size:12px;display:block;margin-bottom:4px}
+.stat b{font-size:18px}
+.sub{display:block;font-size:12px;color:var(--muted);font-weight:500;margin-top:2px}
+.good{color:var(--good)}.bad{color:var(--bad)}.warn{color:var(--warn)}
+.tx{display:flex;align-items:center;gap:12px;padding:11px 0}
+.av{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;flex:none}
+.av svg{width:20px;height:20px}
+.tx .m{flex:1;min-width:0}
+.tx .m b{display:block;font-size:15px}
+.tx .m small{color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.tx .r{text-align:right;font-weight:700;font-size:15px}
+.swrap{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+.swrap:last-child{border-bottom:0}
+.swdel{position:absolute;top:0;bottom:0;right:0;width:88px;background:var(--bad);color:#fff;border:0;font-size:14px;font-weight:700;cursor:pointer}
+.sw{position:relative;background:var(--card);transition:transform .2s;touch-action:pan-y;cursor:pointer}
+.sw.open{transform:translateX(-88px)}
+.trash{background:none;border:0;color:var(--muted);padding:8px 2px 8px 6px;cursor:pointer;opacity:.75;flex:none}
+.trash svg{width:17px;height:17px;display:block}
+.dh{font-size:12px;color:var(--muted);margin:14px 0 2px;font-weight:600}
+nav{position:fixed;left:14px;right:14px;bottom:calc(10px + env(safe-area-inset-bottom,0px));max-width:440px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);display:flex;padding:6px;gap:6px}
+nav button{flex:1;background:none;border:0;border-radius:18px;padding:9px 0;color:var(--muted);font-size:12px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;transition:all .15s}
+nav button svg{width:22px;height:22px}
+nav button.on{color:var(--accent);background:var(--chip);font-weight:700}
+nav button.plus{color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2));font-weight:700;box-shadow:0 4px 14px rgba(91,108,255,.4)}
+label{display:block;font-size:12px;color:var(--muted);margin:14px 0 6px;font-weight:600}
+input,select,textarea{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--text);font-size:16px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+.chip{padding:11px 10px;border-radius:12px;border:1px solid var(--line);background:var(--chip);color:var(--text);font-size:13px;text-align:left;cursor:pointer}
+.chip.on{border-color:var(--accent);background:var(--accent);color:#fff;font-weight:700}
+.chips3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.chips3 .chip{text-align:center;padding:12px 4px;font-size:14px}
+.btn{width:100%;margin-top:18px;padding:14px;border:0;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:16px;font-weight:700;cursor:pointer}
+.btn.ghost{background:var(--chip);color:var(--text)}
+.btn.red{background:var(--bad)}
+.btn.big{padding:18px;font-size:19px}
+.btn.sm{margin-top:10px;padding:12px;font-size:15px}
+.empty{color:var(--muted);text-align:center;padding:22px 0;font-size:14px}
+.row2{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px}
+.row2:last-child{border:0}
+.note{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:18px;padding:14px;text-align:left;font-size:15px;font-weight:700;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow);cursor:pointer;min-height:90px}
+.tile:active{transform:scale(.97)}
+.tile .av{width:44px;height:44px}
+.tt{font-size:16px;font-weight:800}
+.back{background:none;border:0;color:var(--accent);font-size:16px;font-weight:700;padding:4px 0 10px;cursor:pointer}
+.ftitle{font-size:26px;font-weight:800;margin-bottom:12px;letter-spacing:-.5px}
+.bigin{font-size:34px!important;font-weight:800;padding:16px 14px!important}
+.prev{margin-top:10px;font-size:15px;font-weight:700;color:var(--accent);min-height:20px}
+.rate{display:flex;gap:8px;align-items:center}
+.rate input{flex:1}
+.rate .btn{margin:0;width:auto;padding:13px 18px}
+.loanpick{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid var(--line);background:var(--chip);color:var(--text);border-radius:14px;padding:12px 14px;margin-bottom:8px;cursor:pointer;font-size:14px}
+.loanpick b{display:block;font-size:16px}
+.loanpick small{display:block;opacity:.75;font-size:12px;margin-top:2px}
+.loanpick .rem{font-weight:800;white-space:nowrap}
+.loanpick.on{border-color:var(--accent);background:var(--accent);color:#fff}
+.seg{display:flex;background:var(--chip);border-radius:12px;padding:4px;gap:4px}
+.seg button{flex:1;padding:10px;border:0;background:none;border-radius:9px;color:var(--text);font-size:14px;cursor:pointer}
+.seg button.on{background:var(--card);font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.lock{position:fixed;inset:0;z-index:50;background:linear-gradient(160deg,#10163a,#2a1a6e);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center}
+.lock .logo{width:72px;height:72px;border-radius:22px;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+.lock .logo svg{width:34px;height:34px}
+.lock h2{margin:0 0 6px;font-size:24px}
+.lock p{margin:0 0 22px;opacity:.75;font-size:14px}
+.lock input{max-width:320px;text-align:center;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.25);color:#fff;letter-spacing:4px;font-size:20px}
+.lock input::placeholder{color:rgba(255,255,255,.55);letter-spacing:0;font-size:15px}
+.lock .btn{max-width:320px;background:#fff;color:#2a1a6e}
+.lock .fp{margin-top:18px;background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:16px;padding:12px 22px;font-size:15px;display:flex;gap:8px;align-items:center;cursor:pointer}
+.lock .fp svg{width:22px;height:22px}
+.lock .err{color:#ffb4b8;min-height:20px;margin-top:10px;font-size:13px}
+.shake{animation:sh .35s}
+@keyframes sh{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:110px;background:#111827;color:#fff;padding:13px 20px;border-radius:14px;font-size:15px;font-weight:600;opacity:0;transition:opacity .25s;z-index:60;pointer-events:none;max-width:90%;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<nav id="nav"></nav>
+<div class="lock" id="lock" style="display:none"></div>
+<div id="toast"></div>
+
+<script>
+var IC={
+ home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>',
+ plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+ chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg>',
+ users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.5 3-6 6.5-6s6.5 2.5 6.5 6M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20c0-2.6-1.6-4.6-4-5.5"/></svg>',
+ gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+ lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+ fp:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11v3.5c0 2-.5 3.8-1.5 5.5M8 13.5c0 2.3-.4 4-1.3 5.8M16 13c0 3-.6 5.3-1.8 7.2M5 10.5a7 7 0 0 1 14 0M8.5 9a4 4 0 0 1 7 0"/></svg>',
+ up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>',
+ down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>',
+ swap:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h12l-3-3M17 17H5l3 3"/></svg>',
+ trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>'
+};
+var TYPES={
+ expense:{n:"Expense",cat:1,ic:"down",c:"#e5484d"},
+ other_expense:{n:"Spent for Someone",person:1,ic:"users",c:"#f08a24"},
+ income:{n:"Received Cash",cat:1,ic:"up",c:"#12a05c"},
+ trade_profit:{n:"Trade Profit ($)",tr:1,ic:"chart",c:"#12a05c"},
+ trade_loss:{n:"Trade Loss ($)",tr:1,ic:"chart",c:"#e5484d"},
+ trade_deposit:{n:"Trading Deposit ($)",tr:1,rt:1,ic:"up",c:"#5b6cff"},
+ trade_withdraw:{n:"Trading Withdraw ($)",tr:1,rt:1,ic:"down",c:"#12a05c"},
+ udhar_diya:{n:"Gave Loan (Udhar)",person:1,u:1,ic:"swap",c:"#f08a24"},
+ wapas_mila:{n:"Got Loan Back",person:1,u:-1,ic:"swap",c:"#12a05c"},
+ udhar_liya:{n:"Took Loan (Liya)",person:1,u:-1,ic:"swap",c:"#8a5bff"},
+ wapas_kiya:{n:"Returned Loan",person:1,u:1,ic:"swap",c:"#5b6cff"}
+};
+var REPAY={wapas_mila:"udhar_diya",wapas_kiya:"udhar_liya"};
+var REPAYFOR={udhar_diya:"wapas_mila",udhar_liya:"wapas_kiya"};
+var POS={income:1,trade_profit:1,trade_withdraw:1,wapas_mila:1,udhar_liya:1};
+var CATS=["Food","Transport","Bills","Rent","Home","Health","Clothes","Education","Travel","Mobile","Shopping","Other"];
+var INCCATS=["Salary","Business","Gift","Other"];
+var G=[
+ ["Daily Personal",["expense","income","other_expense"]],
+ ["Trading (USD)",["trade_profit","trade_loss","trade_deposit","trade_withdraw"]],
+ ["Loans & Khata",["udhar_diya","wapas_mila","udhar_liya","wapas_kiya"]]
+];
+
+function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+var state={tab:"home",step:0,edit:null,loan:null,from:"home",month:today().slice(0,7),ftype:"expense",fcat:"Food",q:"",unlocked:false,lockMode:"unlock"};
+var data=[];
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}return null}
+function load(){try{data=JSON.parse(ls("hk_data")||"[]")}catch(e){data=[]}}
+function save(){ls("hk_data",JSON.stringify(data));if(window.Sync&&Sync.apply)Sync.apply({entries:data})}
+function rate(){return parseFloat(ls("hk_rate"))||280}
+function rs(n){return "Rs "+Math.round(Math.abs(n)).toLocaleString("en-US")}
+function usd(n){return "$"+Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function esc(s){return String(s||"").replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function isT(d){return d.type.indexOf("trade_")===0}
+function rsv(d){return d.amount*(d.rate||rate())}
+var _lid=0;function uid(){var n=Date.now();if(n<=_lid)n=_lid+1;_lid=n;return n}
+function byId(id){return data.filter(function(x){return x.id===id})[0]}
+function monthData(){return data.filter(function(d){return d.date.slice(0,7)===state.month})}
+function sum(l,f){return l.reduce(function(a,d){return a+f(d)},0)}
+function sgn(v,f){return (v<0?"-":"+")+f(v)}
+
+/* ---------- Fingerprint & Passcode System ---------- */
+function getPass(){return ls("hk_app_pin")||"4202"}
+function hasFp(){return !!ls("hk_cred")}
+function isNative(){return !!(window.NB&&NB.native)}
+function b64(buf){return btoa(String.fromCharCode.apply(null,new Uint8Array(buf)))}
+function unb64(s){return Uint8Array.from(atob(s),function(c){return c.charCodeAt(0)})}
+function rnd(n){var a=new Uint8Array(n);crypto.getRandomValues(a);return a}
+
+async function fpSupported(){
+ if(isNative())return await NB.bioAvailable();
+ try{return !!(window.PublicKeyCredential&&await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())}catch(e){return false}
+}
+async function fpRegister(){
+ if(isNative()){var ok=await NB.bioAuth("Confirm your fingerprint");if(ok)ls("hk_cred","native");return ok}
+ try{
+  var c=await navigator.credentials.create({publicKey:{challenge:rnd(32),rp:{name:"Money Tracker"},user:{id:rnd(16),name:"user",displayName:"User"},pubKeyCredParams:[{type:"public-key",alg:-7},{type:"public-key",alg:-257}],authenticatorSelection:{authenticatorAttachment:"platform",userVerification:"required"},timeout:60000}});
+  ls("hk_cred",b64(c.rawId));return true;
+ }catch(e){return false}
+}
+async function fpAuth(){
+ if(isNative())return await NB.bioAuth("Unlock Money Tracker");
+ try{
+  await navigator.credentials.get({publicKey:{challenge:rnd(32),allowCredentials:[{type:"public-key",id:unb64(ls("hk_cred"))}],userVerification:"required",timeout:60000}});
+  return true;
+ }catch(e){return false}
+}
+async function doFp(){
+ if(await fpAuth()){state.unlocked=true;render()}
+ else{lerr("Fingerprint not recognized")}
+}
+async function enableFp(){
+ if(!(await fpSupported())){alert("Fingerprint device par available nahi hai.");return}
+ if(await fpRegister()){toast("Fingerprint enabled");render()}
+ else{alert("Fingerprint verify nahi hua.");}
+}
+
+function lerr(m){
+ var e=document.getElementById("lerr");
+ if(e){e.textContent=m;var x=document.querySelector("#lock input");if(x){x.classList.remove("shake");void x.offsetWidth;x.classList.add("shake")}}
+}
+function checkUnlock(){
+ var v=(document.getElementById("pw_in").value||"").trim();
+ if(v===getPass()||v==="4202"){
+  state.unlocked=true;
+  render();
+ }else{
+  lerr("Wrong password");
+  document.getElementById("pw_in").value="";
+ }
+}
+function lockNow(){state.unlocked=false;render()}
+
+/* ---------- Cash & Ledger Logic ---------- */
+function cashStats(){
+ var personal=data.filter(function(d){return !isT(d)});
+ var inc=sum(personal,function(d){return d.type==="income"?d.amount:0});
+ var exp=sum(personal,function(d){return (d.type==="expense"||d.type==="other_expense")?d.amount:0});
+ var depToTrade=sum(data,function(d){return d.type==="trade_deposit"?rsv(d):0});
+ var wdFromTrade=sum(data,function(d){return d.type==="trade_withdraw"?rsv(d):0});
+ var lGave=sum(data,function(d){return d.type==="udhar_diya"?d.amount:0});
+ var lGotBack=sum(data,function(d){return d.type==="wapas_mila"?d.amount:0});
+ var lTook=sum(data,function(d){return d.type==="udhar_liya"?d.amount:0});
+ var lReturned=sum(data,function(d){return d.type==="wapas_kiya"?d.amount:0});
+ var netCash=(inc + wdFromTrade + lTook + lGotBack) - (exp + depToTrade + lGave + lReturned);
+
+ var m=monthData().filter(function(d){return !isT(d)});
+ var mInc=sum(m,function(d){return d.type==="income"?d.amount:0});
+ var mExp=sum(m,function(d){return (d.type==="expense"||d.type==="other_expense")?d.amount:0});
+ return {netCash:netCash,mInc:mInc,mExp:mExp};
+}
+
+function persons(){
+ var p={};
+ data.forEach(function(d){
+  if(!d.person)return;var t=TYPES[d.type];
+  p[d.person]=p[d.person]||{bal:0,spent:0};
+  if(t.u)p[d.person].bal+=t.u*d.amount;
+  if(d.type==="other_expense")p[d.person].spent+=d.amount;
+ });
+ return p;
+}
+
+function openLoans(kind,ex){
+ var rk=kind==="udhar_diya"?"wapas_mila":"wapas_kiya";
+ var loans=data.filter(function(d){return d.type===kind}).sort(function(a,b){return a.date.localeCompare(b.date)||a.id-b.id}).map(function(d){return {id:d.id,person:d.person,amount:d.amount,date:d.date,note:d.note,rem:d.amount}});
+ var map={};loans.forEach(function(l){map[l.id]=l});
+ var loose={};
+ data.filter(function(d){return d.type===rk&&d.id!==ex}).forEach(function(r){
+  if(r.loan&&map[r.loan])map[r.loan].rem-=r.amount;else loose[r.person]=(loose[r.person]||0)+r.amount;
+ });
+ loans.forEach(function(l){var x=loose[l.person]||0;if(x>0&&l.rem>0){var u=Math.min(x,l.rem);l.rem-=u;loose[l.person]=x-u}});
+ return loans.filter(function(l){return l.rem>0.005});
+}
+
+function txRow(d){
+ var t=TYPES[d.type],tr=isT(d);
+ var amt=tr?usd(d.amount):rs(d.amount);
+ return '<div class="swrap"><button class="swdel" onclick="del('+d.id+')">Delete</button><div class="tx sw" onclick="rowTap(event,'+d.id+')"><div class="av" style="background:'+t.c+'22;color:'+t.c+'">'+IC[t.ic]+'</div><div class="m"><b>'+t.n.replace(" ($)","")+(d.cat?' &middot; '+esc(d.cat):'')+(d.person?' &middot; '+esc(d.person):'')+(d.pair?' &middot; '+esc(d.pair):'')+'</b><small>'+d.date+(d.note?' &middot; '+esc(d.note):'')+'</small></div><div class="r"><span class="'+(POS[d.type]?'good':'bad')+'">'+(POS[d.type]?'+':'-')+amt+'</span>'+(tr?'<span class="sub">= '+rs(rsv(d))+'</span>':'')+'</div><button class="trash" aria-label="Delete" onclick="event.stopPropagation();del('+d.id+')">'+IC.trash+'</button></div></div>';
+}
+var swipedAt=0,sw0=null;
+function closeRows(except){document.querySelectorAll(".sw.open").forEach(function(r){if(r!==except)r.classList.remove("open")})}
+document.addEventListener("pointerdown",function(e){var r=e.target&&e.target.closest?e.target.closest(".sw"):null;closeRows(r);sw0=r?{r:r,x:e.clientX,y:e.clientY}:null});
+document.addEventListener("pointerup",function(e){
+ if(!sw0)return;var dx=e.clientX-sw0.x,dy=e.clientY-sw0.y;
+ if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)*1.5){sw0.r.classList.toggle("open");swipedAt=Date.now()}
+ sw0=null;
+});
+function rowTap(e,id){
+ if(Date.now()-swipedAt<350)return;
+ var r=e.currentTarget;if(r&&r.classList&&r.classList.contains("open")){r.classList.remove("open");return}
+ openEdit(id);
+}
+function header(title,sub,showKhata){
+ return '<div class="top"><div><h1>'+title+'</h1><small>'+sub+'</small></div><div>'+(showKhata?'<button class="ib" aria-label="People / Khata" onclick="go(\'khata\')">'+IC.users+'</button>':'')+'<button class="ib" aria-label="Settings" onclick="go(\'settings\')">'+IC.gear+'</button><button class="ib" aria-label="Lock" onclick="lockNow()">'+IC.lock+'</button></div></div>';
+}
+function go(tab){state.tab=tab;state.step=0;state.edit=null;state.loan=null;render();if(window.scrollTo)window.scrollTo(0,0)}
+function openForm(k){state.from=state.tab;state.ftype=k;state.step=2;state.edit=null;state.loan=null;state.tab="add";render();if(window.scrollTo)window.scrollTo(0,0)}
+function openEdit(id){
+ var d=byId(id);if(!d)return;
+ if(d.type==="income"&&d.link){var w=byId(d.link);if(w)d=w}
+ state.from=state.tab;state.edit=d;state.ftype=d.type;state.step=2;state.loan=d.loan||(REPAY[d.type]?"other":null);
+ if(d.cat)state.fcat=d.cat;
+ state.tab="add";render();if(window.scrollTo)window.scrollTo(0,0);
+}
+
+/* 1. Cash / Home Screen */
+function home(){
+ var cs=cashStats(),p=persons(),lena=0,dena=0;
+ Object.keys(p).forEach(function(k){if(p[k].bal>0)lena+=p[k].bal;else dena-=p[k].bal});
+
+ var h=header("Cash Dashboard","Personal Money (Excluding Trading)",true);
+ h+='<div class="hero"><small>Total Personal Cash / Bank</small><div class="big">'+(cs.netCash<0?"-":"")+rs(cs.netCash)+'</div><div class="eq">Pocket cash, bank accounts & personal ledger</div><div class="two"><div><small>This Month In</small><b>'+rs(cs.mInc)+'</b></div><div><small>This Month Out</small><b>'+rs(cs.mExp)+'</b></div></div></div>';
+
+ h+='<div class="mini">';
+ h+='<div class="card stat" style="margin:0;cursor:pointer" onclick="go(\'khata\')"><small>Kisi Se Lena Hai (Udhar)</small><b class="good">'+rs(lena)+'</b><span class="sub">Open Khata list &rarr;</span></div>';
+ h+='<div class="card stat" style="margin:0;cursor:pointer" onclick="go(\'khata\')"><small>Kisi Ko Dena Hai (Wapis)</small><b class="warn">'+rs(dena)+'</b><span class="sub">Open Khata list &rarr;</span></div>';
+ h+='</div>';
+
+ h+='<div class="card"><h3>Quick Cash Add</h3>';
+ h+='<div class="tiles" style="margin-bottom:6px"><button class="tile" onclick="openForm(\'expense\')"><span class="av" style="background:#e5484d22;color:#e5484d">'+IC.down+'</span><span>Expense</span></button><button class="tile" onclick="openForm(\'income\')"><span class="av" style="background:#12a05c22;color:#12a05c">'+IC.up+'</span><span>Received Cash</span></button></div></div>';
+
+ h+='<div class="card"><h3>Recent Cash Activity</h3>';
+ var rec=data.filter(function(d){return !isT(d)}).sort(function(a,b){return b.date.localeCompare(a.date)||b.id-a.id}).slice(0,6);
+ if(!rec.length)h+='<div class="empty">Koi personal transaction nahi hai abhi.</div>';
+ else rec.forEach(function(d){h+=txRow(d)});
+ return h+'</div>';
+}
+
+/* 2. Dedicated Trading Page */
+function trading(){
+ var all=data.filter(isT);
+ function T(t){return sum(all,function(d){return d.type===t?d.amount:0})}
+ function C(t){return all.filter(function(d){return d.type===t}).length}
+ var dep=T("trade_deposit"),wd=T("trade_withdraw"),tp=T("trade_profit"),tl=T("trade_loss"),bal=dep-wd+tp-tl,net=tp-tl,w=C("trade_profit"),l=C("trade_loss");
+ var netRs=sum(all,function(d){return d.type==="trade_profit"?rsv(d):d.type==="trade_loss"?-rsv(d):0});
+ var wr=(w+l)?Math.round(w/(w+l)*100)+"%":"-";
+
+ var h=header("Trading Hub","Dedicated Trading Account");
+ h+='<div class="hero trading"><small>Total Trading Capital</small><div class="big">'+(bal<0?"-":"")+usd(bal)+'</div><div class="eq">= '+(bal<0?"-":"")+rs(bal*rate())+' (Rate: Rs '+rate()+'/$)</div><div class="two"><div><small>Deposited</small><b>'+usd(dep)+'</b></div><div><small>Withdrawn</small><b>'+usd(wd)+'</b></div></div></div>';
+
+ h+='<div class="card"><h3>Quick Trading Action</h3>';
+ h+='<div class="tiles" style="margin-bottom:6px"><button class="tile" onclick="openForm(\'trade_profit\')"><span class="av" style="background:#12a05c22;color:#12a05c">'+IC.up+'</span><span>+ Profit ($)</span></button><button class="tile" onclick="openForm(\'trade_loss\')"><span class="av" style="background:#e5484d22;color:#e5484d">'+IC.down+'</span><span>- Loss ($)</span></button><button class="tile" onclick="openForm(\'trade_deposit\')"><span class="av" style="background:#5b6cff22;color:#5b6cff">'+IC.up+'</span><span>Deposit ($)</span></button><button class="tile" onclick="openForm(\'trade_withdraw\')"><span class="av" style="background:#12a05c22;color:#12a05c">'+IC.down+'</span><span>Withdraw ($)</span></button></div></div>';
+
+ h+='<div class="mini">';
+ h+='<div class="card stat" style="margin:0"><small>Total Profit</small><b class="good">'+usd(tp)+'</b></div>';
+ h+='<div class="card stat" style="margin:0"><small>Total Loss</small><b class="bad">'+usd(tl)+'</b></div>';
+ h+='<div class="card stat" style="margin:0"><small>Net Trading P&L</small><b class="'+(net>=0?'good':'bad')+'">'+sgn(net,usd)+'</b><span class="sub">= '+sgn(netRs,rs)+'</span></div>';
+ h+='<div class="card stat" style="margin:0"><small>Win Rate</small><b>'+wr+'</b><span class="sub">'+w+' Win / '+l+' Loss</span></div>';
+ h+='</div>';
+
+ h+='<div class="card"><h3>Dollar Conversion Rate</h3><div class="rate"><input id="rate_in" type="number" inputmode="decimal" value="'+rate()+'"><button class="btn" onclick="saveRate()">Save</button></div><div class="note">1 Dollar = kitne Rupees hain. Ye rate conversion me use hota hai.</div></div>';
+
+ h+='<div class="card"><h3>Recent Trade Logs</h3>';
+ var tlist=all.sort(function(a,b){return b.date.localeCompare(a.date)||b.id-a.id}).slice(0,8);
+ if(!tlist.length)h+='<div class="empty">Koi trade log nahi mila. Upar buttons se add karein.</div>';
+ else tlist.forEach(function(d){h+=txRow(d)});
+ return h+'</div>';
+}
+function saveRate(){var v=parseFloat(document.getElementById("rate_in").value);if(!(v>0)){alert("Enter valid rate");return}ls("hk_rate",String(v));render();toast("Rate saved: Rs "+v)}
+
+/* 3. Add Screen */
+function addForm(){
+ var h;
+ if(!state.step){
+  h=header("Add New Entry","Select entry category");
+  G.forEach(function(g){
+   h+='<div class="dh">'+g[0].toUpperCase()+'</div><div class="tiles">'+g[1].map(function(k){
+    var t=TYPES[k];
+    return '<button class="tile" onclick="openForm(\''+k+'\')"><span class="av" style="background:'+t.c+'22;color:'+t.c+'">'+IC[t.ic]+'</span><span>'+t.n+'</span></button>';
+   }).join("")+'</div>';
+  });
+  return h;
+ }
+ var E=state.edit||{},t=TYPES[state.ftype],isRep=!!REPAY[state.ftype];
+ h='<button class="back" onclick="go(state.from||\'home\')">&larr; Back</button><div class="ftitle" style="color:'+t.c+'">'+(state.edit?"Edit ":"")+t.n+'</div><div class="card">';
+ h+='<label style="margin-top:0">'+(t.tr?"Amount in Dollars ($)":"Amount (Rs)")+'</label><input id="f_amt" class="bigin" type="number" inputmode="decimal" placeholder="0" value="'+(E.amount||"")+'" oninput="calcPrev()">';
+ if(t.tr)h+='<div class="prev" id="prev"></div>';
+ if(t.rt)h+='<label>Dollar Rate (Rs for 1 $)</label><input id="f_rate" type="number" inputmode="decimal" value="'+(E.rate||rate())+'" oninput="calcPrev()">';
+ if(t.tr&&!t.rt){
+  h+='<label>Pair / Symbol (e.g. XAUUSD)</label><input id="f_pair" placeholder="e.g. BTC, XAUUSD" value="'+esc(E.pair||"")+'">';
+ }
+ if(t.cat){
+  var list=state.ftype==="income"?INCCATS:CATS;
+  if(list.indexOf(state.fcat)<0)state.fcat=list[0];
+  h+='<label>Category</label><div class="chips3">';
+  list.forEach(function(c){h+='<button class="chip cat'+(c===state.fcat?' on':'')+'" onclick="pickCat(this)">'+c+'</button>'});
+  h+='</div>';
+ }
+ if(isRep){
+  var kind=REPAY[state.ftype],loans=openLoans(kind,E.id);
+  if(E.loan&&!loans.some(function(l){return l.id===E.loan})){var ol=byId(E.loan);if(ol)loans.unshift({id:ol.id,person:ol.person,amount:ol.amount,rem:0,date:ol.date,note:ol.note})}
+  if(state.loan==null){state.loan=loans.length===1?loans[0].id:(loans.length?null:"other")}
+  h+='<label>Select Loan Account</label>';
+  loans.forEach(function(l){h+='<button class="loanpick'+(state.loan===l.id?' on':'')+'" data-id="'+l.id+'" onclick="pickLoan('+l.id+')"><span><b>'+esc(l.person)+'</b><small>'+rs(l.amount)+' on '+l.date+'</small></span><span class="rem">'+rs(l.rem)+' left</span></button>'});
+  h+='<button class="loanpick'+(state.loan==="other"?' on':'')+'" data-id="other" onclick="pickLoan(\'other\')"><span><b>Someone else</b></span></button>';
+  h+='<div id="f_per_w" style="display:'+(state.loan==="other"?'block':'none')+'"><label>Person Name</label><input id="f_per" placeholder="Name" value="'+esc(E.person||"")+'"></div>';
+ }else if(t.person){
+  h+='<label>Person Name</label><input id="f_per" placeholder="Name" value="'+esc(E.person||"")+'">';
+ }
+ h+='<label>Date</label><input id="f_date" type="date" value="'+(E.date||today())+'"><label>Note (optional)</label><input id="f_note" placeholder="Details" value="'+esc(E.note||"")+'"><button class="btn big" onclick="addEntry()">'+(state.edit?"Save Changes":"Save Entry")+'</button></div>';
+ return h;
+}
+function pickCat(el){state.fcat=el.textContent;document.querySelectorAll(".cat").forEach(function(x){x.classList.remove("on")});el.classList.add("on")}
+function pickLoan(id){state.loan=id;document.querySelectorAll(".loanpick").forEach(function(b){b.classList.toggle("on",String(b.getAttribute("data-id"))===String(id))});var w=document.getElementById("f_per_w");if(w)w.style.display=id==="other"?"block":"none"}
+function calcPrev(){
+ var t=TYPES[state.ftype],pv=document.getElementById("prev");if(!pv||!t.tr)return;
+ var a=parseFloat(document.getElementById("f_amt").value)||0,re=document.getElementById("f_rate"),r=re?parseFloat(re.value)||0:rate();
+ pv.textContent=a&&r?"= "+rs(a*r):"";
+}
+function addEntry(){
+ var type=state.ftype,t=TYPES[type],amt=parseFloat(document.getElementById("f_amt").value);
+ if(!(amt>0)){alert("Sahi amount likhein");return}
+ var per="",loanId=null;
+ if(REPAY[type]){
+  if(state.loan&&state.loan!=="other"){
+   var base=byId(state.loan);if(!base){alert("Loan nahi mila");return}
+   per=base.person;loanId=base.id;
+  }else if(state.loan==="other"){
+   per=document.getElementById("f_per").value.trim();if(!per){alert("Naam likhein");return}
+  }
+ }else if(t.person){
+  per=document.getElementById("f_per").value.trim();if(!per){alert("Naam likhein");return}
+ }
+ var r=rate();if(t.rt){r=parseFloat(document.getElementById("f_rate").value);if(!(r>0)){alert("Dollar rate likhein");return}ls("hk_rate",String(r))}
+ var date=document.getElementById("f_date").value||today();
+ var note=document.getElementById("f_note").value.trim();
+ var pe=document.getElementById("f_pair"),pair=(pe&&pe.value.trim())?pe.value.trim().toUpperCase():"";
+
+ if(state.edit){
+  var e=state.edit;e.amount=amt;e.date=date;e.note=note;e.person=per;if(t.cat)e.cat=state.fcat;
+  if(t.tr){e.rate=r;if(pair)e.pair=pair;else delete e.pair}
+  if(loanId)e.loan=loanId;else delete e.loan;
+  save();toast("Updated successfully");go(t.tr?"trading":"home");return;
+ }
+ var id=uid();
+ var n={id:id,type:type,amount:amt,cat:t.cat?state.fcat:"",person:per,date:date,note:note};
+ if(t.tr){n.rate=r;if(pair)n.pair=pair}
+ if(loanId)n.loan=loanId;
+ data.push(n);
+ save();toast("Saved successfully");go(t.tr?"trading":"home");
+}
+function del(id){
+ var d=byId(id);if(!d)return;
+ if(!confirm("Delete this entry?"))return;
+ data=data.filter(function(x){return x.id!==id&&x.id!==d.link});
+ save();render();toast("Deleted");
+}
+
+function khata(){
+ var p=persons(),keys=Object.keys(p),h='<button class="back" onclick="go(\'home\')">&larr; Back to Home</button>'+header("Khata Ledger","Udhar aur Baqaya");
+ if(!keys.length)return h+'<div class="card empty">Koi khata record nahi mila.</div>';
+ var lent=openLoans("udhar_diya"),took=openLoans("udhar_liya");
+ keys.forEach(function(k){
+  var b=p[k].bal;
+  h+='<div class="card"><div class="tx" style="padding:0"><div class="av" style="background:var(--chip);color:var(--accent)">'+esc(k.charAt(0).toUpperCase())+'</div><div class="m"><b style="font-size:16px">'+esc(k)+'</b></div><div class="r '+(b>0?'good':b<0?'bad':'')+'">'+(b>0?'Lena Hai<br>':b<0?'Dena Hai<br>':'Settled')+(b?rs(b):'')+'</div></div>';
+  var rows=[];
+  lent.filter(function(l){return l.person===k}).forEach(function(l){rows.push({l:l,g:1})});
+  took.filter(function(l){return l.person===k}).forEach(function(l){rows.push({l:l,g:0})});
+  rows.forEach(function(x){h+='<div class="row2" style="margin-top:8px;border-top:1px solid var(--line);border-bottom:0;padding-top:10px"><span style="font-size:13px">'+(x.g?"Diya tha: ":"Liya tha: ")+rs(x.l.amount)+'<br><b>'+rs(x.l.rem)+' baqi</b></span><button class="chip" onclick="openRepay('+x.l.id+')">'+(x.g?"Wapis Mila":"Wapis Kiya")+'</button></div>'});
+  h+='</div>';
+ });
+ return h;
+}
+function openRepay(loanId){var L=byId(loanId);if(!L)return;state.from="khata";state.ftype=REPAYFOR[L.type];state.step=2;state.loan=loanId;state.tab="add";render()}
+
+function settings(){
+ var th=ls("hk_theme")||"dark";
+ var h='<button class="back" onclick="go(\'home\')">&larr; Back to Home</button>'+header("Settings","Data, Sync & Security");
+ h+='<div class="card"><h3>Cloud Sync</h3><button class="btn sm" onclick="if(window.Sync)Sync.signIn()">Sign in with Google</button></div>';
+ h+='<div class="card"><h3>Theme</h3><div class="seg">'+[["dark","Dark"],["light","Light"]].map(function(x){return '<button class="'+(th===x[0]?'on':'')+'" onclick="setTheme(\''+x[0]+'\')">'+x[1]+'</button>'}).join("")+'</div></div>';
+ h+='<div class="card"><h3>App Lock & Security</h3><div class="row2"><span>PIN Code</span><b>'+getPass()+'</b></div><div class="row2"><span>Fingerprint</span><b>'+(hasFp()?'ON':'OFF')+'</b></div><button class="btn sm" onclick="changePin()">Change PIN</button>';
+ if(!hasFp())h+='<button class="btn sm ghost" onclick="enableFp()">Enable Fingerprint</button>';
+ else h+='<button class="btn sm ghost" onclick="ls(\'hk_cred\',null);render()">Remove Fingerprint</button>';
+ h+='</div>';
+ return h;
+}
+function changePin(){
+ var n=prompt("Naya PIN code likhein (4 digits):");
+ if(n&&n.trim().length>=4){ls("hk_app_pin",n.trim());toast("Naya PIN save ho gaya");render()}
+}
+function setTheme(t){ls("hk_theme",t);document.documentElement.setAttribute("data-theme",t);render()}
+function toast(m){var e=document.getElementById("toast");e.textContent=m;e.style.opacity=1;clearTimeout(window.__t);window.__t=setTimeout(function(){e.style.opacity=0},2500)}
+
+function render(){
+ var L=document.getElementById("lock"),nav=document.getElementById("nav"),app=document.getElementById("app");
+ if(!state.unlocked){
+  app.innerHTML="";nav.style.display="none";L.style.display="flex";
+  var lockHtml='<div class="logo">'+IC.lock+'</div><h2>Money Tracker</h2><p>Unlock karne ke liye 4202 enter karein</p><input id="pw_in" type="password" placeholder="••••" autofocus><div class="err" id="lerr"></div><button class="btn" onclick="checkUnlock()">Unlock</button>';
+  if(hasFp()){lockHtml+='<button class="fp" onclick="doFp()">'+IC.fp+'Unlock with fingerprint</button>'}
+  L.innerHTML=lockHtml;
+  setTimeout(function(){
+   var el=document.getElementById("pw_in");
+   if(el){el.focus();el.onkeydown=function(e){if(e.key==="Enter")checkUnlock()}}
+   if(hasFp())doFp();
+  },120);
+  return;
+ }
+ L.style.display="none";nav.style.display="flex";
+ var views={home:home,trading:trading,add:addForm,khata:khata,settings:settings};
+ app.innerHTML=(views[state.tab]||home)();
+
+ var tabs=[
+  ["home","Cash / Home","home"],
+  ["add","Add","plus"],
+  ["trading","Trading","chart"]
+ ];
+ nav.innerHTML=tabs.map(function(t){
+  return '<button class="'+(state.tab===t[0]?'on':'')+(t[0]==="add"?' plus':'')+'" onclick="go(\''+t[0]+'\')">'+IC[t[2]]+t[1]+'</button>';
+ }).join("");
+}
+
+function boot(){load();var t=ls("hk_theme")||"dark";document.documentElement.setAttribute("data-theme",t);render()}
+boot();
+</script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getDatabase, ref, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+
+var firebaseConfig = {
+  apiKey: "AIzaSyD1T9whAGhk1GNVLEhJ-cgCZVz-EOhq1Nc",
+  authDomain: "money-tracker-bd67a.firebaseapp.com",
+  databaseURL: "https://money-tracker-bd67a-default-rtdb.firebaseio.com",
+  projectId: "money-tracker-bd67a",
+  storageBucket: "money-tracker-bd67a.firebasestorage.app",
+  messagingSenderId: "971828439353",
+  appId: "1:971828439353:web:d67b72a0d77029bc36e0e8"
+};
+var app = initializeApp(firebaseConfig), auth = getAuth(app), db = getDatabase(app);
+
+window.Sync = {
+  signIn: async function () {
+    try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+    catch(e){ alert("Sign-in error: "+e.message); }
+  },
+  signOut: function () { signOut(auth); },
+  apply: function (u) { if(auth.currentUser) update(ref(db, "users/" + auth.currentUser.uid), u); }
+};
+onAuthStateChanged(auth, function (u) {
+  if (u) {
+    onValue(ref(db, "users/" + u.uid), function (s) {
+      var v = s.val() || {};
+      if (v.entries) { data = Array.isArray(v.entries)?v.entries:Object.values(v.entries); ls("hk_data", JSON.stringify(data)); render(); }
+    });
+  }
+});
+</script>
+</body>
+</html>
