@@ -11,8 +11,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Money Tracker">
-<link rel="icon" type="image/png" sizes="48x48" href="icons/favicon-48.png">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
 --bg:#f3f5f9;--card:#ffffff;--text:#131a26;--muted:#6f7a8c;--line:#e4e8ef;--accent:#5b6cff;--accent2:#8a5bff;--good:#12a05c;--bad:#e5484d;--chip:#eef1f7;--shadow:0 6px 24px rgba(30,40,80,.08)}
@@ -241,7 +241,7 @@ function rowTap(e,id){
 }
 function monthPicker(){return '<input type="month" value="'+state.month+'" onchange="state.month=this.value;render()" style="margin-bottom:12px">'}
 function header(title,sub,gear){
- return '<div class="top"><div><h1>'+(title==="Money Tracker"?'<img class="hl" src="icons/icon-192.png" alt="">':'')+title+'</h1><small>'+sub+'</small></div><div>'+(gear?'<button class="ib" aria-label="Settings" onclick="go(\'settings\')">'+IC.gear+'</button>':'')+(hasPw()?'<button class="ib" aria-label="Lock" onclick="lockNow()">'+IC.lock+'</button>':'')+'</div></div>';
+ return '<div class="top"><div><h1>'+(title==="Money Tracker"?'<img class="hl" src="icon-192.png" alt="">':'')+title+'</h1><small>'+sub+'</small></div><div>'+(gear?'<button class="ib" aria-label="Settings" onclick="go(\'settings\')">'+IC.gear+'</button>':'')+(hasPw()?'<button class="ib" aria-label="Lock" onclick="lockNow()">'+IC.lock+'</button>':'')+'</div></div>';
 }
 function typeTotal(k,mode){var l=mode==="a"?data:monthData();return sum(l,function(d){return d.type===k?d.amount:0})}
 function tile(k,mode){
@@ -564,7 +564,7 @@ function lockNow(){state.unlocked=false;state.lockMode="unlock";render()}
 function showLock(mode){
  var L=document.getElementById("lock");L.style.display="flex";
  var setup=mode==="setup";
- var h='<div class="logo"><img src="icons/icon-192.png" alt=""></div><h2>'+(setup?'Set a Password':'Money Tracker')+'</h2><p>'+(setup?'Protect your app with a password (min. 4 characters)':'Enter your password to unlock')+'</p>';
+ var h='<div class="logo"><img src="icon-192.png" alt=""></div><h2>'+(setup?'Set a Password':'Money Tracker')+'</h2><p>'+(setup?'Protect your app with a password (min. 4 characters)':'Enter your password to unlock')+'</p>';
  h+='<input id="pw1" type="password" placeholder="Password" autocomplete="off">';
  if(setup)h+='<input id="pw2" type="password" placeholder="Confirm password" style="margin-top:10px" autocomplete="off">';
  h+='<div class="err" id="lerr"></div><button class="btn" style="margin-top:6px" onclick="'+(setup?'doSetup()':'doUnlock()')+'">'+(setup?'Set Lock':'Unlock')+'</button>';
