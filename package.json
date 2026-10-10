@@ -1,0 +1,22 @@
+{
+  "name": "money-tracker",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Personal money tracker: expenses, income, loans and dollar trading",
+  "scripts": {
+    "build:web": "node build.mjs"
+  },
+  "dependencies": {
+    "@aparajita/capacitor-biometric-auth": "latest",
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/filesystem": "^8.0.0",
+    "@capacitor/preferences": "^8.0.0",
+    "@capacitor/share": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0",
+    "esbuild": "^0.25.0"
+  }
+}
