@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pocket Ledger & Trading</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#08090c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ledger">
+<link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+:root{
+  box-sizing:border-box;
+  --bg:#08090c;
+  --card:#111319;
+  --card-elevated:#171a23;
+  --border:#242835;
+  --gold:#d4af37;
+  --gold-light:#f5e28a;
+  --gold-glow:rgba(212,175,55,0.18);
+  --text:#f8fafc;
+  --muted:#8e96a8;
+  --green:#10b981;
+  --red:#f43f5e;
+  --chip:#181c26;
+  --shadow:0 8px 30px rgba(0,0,0,0.55);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  margin:0;
+  min-height:100vh;
+  background:var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,sans-serif;
+  padding-bottom:95px;
+}
+.wrap{max-width:500px;margin:0 auto;padding:16px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.header h1{font-size:21px;font-weight:700;margin:0;letter-spacing:-0.4px;color:#fff}
+.header small{font-size:12px;color:var(--muted);display:block;margin-top:2px}
+.ib{
+  width:40px;height:40px;border-radius:12px;border:1px solid var(--border);
+  background:var(--card);color:var(--gold);display:inline-flex;
+  align-items:center;justify-content:center;margin-left:6px;cursor:pointer;
+}
+.ib svg{width:19px;height:19px}
+
+/* Luxury Gold & Obsidian Hero Cards */
+.gold-card{
+  border-radius:22px;padding:22px;color:#fff;
+  background:radial-gradient(ellipse at top right, rgba(212,175,55,0.22), transparent 70%), linear-gradient(145deg, #181921 0%, #0d0e14 100%);
+  border:1px solid rgba(212,175,55,0.35);
+  box-shadow:var(--shadow),0 0 24px var(--gold-glow);
+  position:relative;margin-bottom:14px;overflow:hidden;
+}
+.gold-card.trading{
+  background:radial-gradient(ellipse at top right, rgba(59,130,246,0.2), transparent 70%), linear-gradient(145deg, #121826 0%, #0c101b 100%);
+  border:1px solid rgba(59,130,246,0.3);
+}
+.gold-card small{font-size:12px;color:var(--gold-light);text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.gold-card .amount{font-size:36px;font-weight:800;letter-spacing:-1px;margin:6px 0;color:#fff}
+.gold-card .subtext{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center}
+.gold-card .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.gold-card .pill{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:10px}
+.gold-card .pill small{color:var(--muted);font-size:11px;display:block}
+.gold-card .pill b{font-size:15px;color:#fff}
+
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 12px;font-size:14px;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);font-weight:700}
+.stat small{color:var(--muted);font-size:12px;display:block;margin-bottom:4px}
+.stat b{font-size:18px;letter-spacing:-0.3px}
+.sub{font-size:11px;color:var(--muted);display:block;margin-top:2px}
+
+.green{color:var(--green)}.red{color:var(--red)}.gold{color:var(--gold)}
+
+/* Quick Actions */
+.action-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
+.btn-tile{
+  background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;
+  display:flex;align-items:center;gap:12px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;
+  transition:transform 0.15s, border-color 0.15s;
+}
+.btn-tile:active{transform:scale(0.97);border-color:var(--gold)}
+.tile-icon{
+  width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none;
+}
+.tile-icon svg{width:18px;height:18px}
+
+/* List Items */
+.tx{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.tx:last-child{border-bottom:none}
+.tx .mid{flex:1;min-width:0}
+.tx .mid b{display:block;font-size:14px;color:#fff}
+.tx .mid small{color:var(--muted);font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx .end{text-align:right;font-weight:700;font-size:15px}
+
+/* Navigation */
+nav{
+  position:fixed;left:14px;right:14px;bottom:calc(12px + env(safe-area-inset-bottom,0px));
+  max-width:440px;margin:0 auto;background:rgba(17,19,25,0.95);backdrop-filter:blur(16px);
+  border:1px solid rgba(212,175,55,0.25);border-radius:24px;box-shadow:var(--shadow);display:flex;padding:6px;gap:6px;
+}
+nav button{
+  flex:1;background:none;border:0;border-radius:16px;padding:9px 0;color:var(--muted);
+  font-size:11px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;
+}
+nav button svg{width:22px;height:22px}
+nav button.active{color:var(--gold);background:var(--chip)}
+
+/* Modal Form Controls */
+input,select{width:100%;padding:14px;border:1px solid var(--border);border-radius:14px;background:#0d0e14;color:#fff;font-size:16px;outline:none;margin-bottom:12px}
+input:focus,select:focus{border-color:var(--gold)}
+.btn-primary{
+  width:100%;padding:16px;border:none;border-radius:14px;background:linear-gradient(135deg,var(--gold),#b89726);
+  color:#000;font-size:16px;font-weight:800;cursor:pointer;margin-top:8px;
+}
+.btn-secondary{
+  width:100%;padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--chip);
+  color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px;
+}
+
+/* Person Profile in Ledger */
+.profile-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:12px}
+.profile-card .top-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.avatar{
+  width:44px;height:44px;border-radius:14px;background:rgba(212,175,55,0.12);
+  border:1px solid rgba(212,175,55,0.3);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:17px;
+}
+.badge{padding:4px 9px;border-radius:8px;font-size:11px;font-weight:700;display:inline-block}
+
+/* Lock Screen */
+.lock-screen{
+  position:fixed;inset:0;z-index:99;background:radial-gradient(circle at center, #181924 0%, #08090c 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;
+}
+.lock-icon{
+  width:64px;height:64px;border-radius:20px;background:rgba(212,175,55,0.1);
+  border:1px solid rgba(212,175,55,0.3);display:flex;align-items:center;justify-content:center;color:var(--gold);margin-bottom:16px;
+}
+.pin-input{max-width:260px;text-align:center;font-size:24px;letter-spacing:8px;border-color:rgba(212,175,55,0.4)}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;background:var(--card-elevated);border:1px solid var(--border);color:#fff;padding:12px 20px;border-radius:14px;font-size:13px;opacity:0;transition:opacity 0.25s;z-index:100;pointer-events:none}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<nav id="nav"></nav>
+<div class="lock-screen" id="lock" style="display:none"></div>
+<div id="toast"></div>
+
+<script>
+var IC = {
+  wallet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M16 12h.01"/><path d="M2 10h20"/></svg>',
+  trading: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M19 9l-5 5-4-4-3 3"/></svg>',
+  khata: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.85"/></svg>',
+  arrowUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>',
+  arrowDown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>',
+  lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+  fp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 11v3.5c0 2-.5 3.8-1.5 5.5M8 13.5c0 2.3-.4 4-1.3 5.8M16 13c0 3-.6 5.3-1.8 7.2M5 10.5a7 7 0 0 1 14 0M8.5 9a4 4 0 0 1 7 0"/></svg>'
+};
+
+var state = { tab:'cash', unlocked:false, modal:null, personFilter:null };
+var data = [];
+
+function ls(k, v) {
+  try {
+    if (v === undefined) return localStorage.getItem(k);
+    if (v === null) localStorage.removeItem(k);
+    else localStorage.setItem(k, v);
+  } catch(e){}
+  return null;
+}
+function load() { try { data = JSON.parse(ls('ledger_data') || '[]'); } catch(e){ data = []; } }
+function save() { 
+  ls('ledger_data', JSON.stringify(data)); 
+  if (window.Sync && window.Sync.apply) window.Sync.apply({ entries: data });
+}
+function rate() { return parseFloat(ls('usd_rate')) || 280; }
+function rs(n) { return 'Rs ' + Math.round(Math.abs(n)).toLocaleString('en-US'); }
+function usd(n) { return '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function esc(s) { return String(s || '').replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+/* Dynamic Calculations */
+function getBalances() {
+  var cashIn = 0, cashOut = 0;
+  var lentTotal = 0, debtTotal = 0;
+  var tradeBal = 0, tradeProfit = 0, tradeLoss = 0;
+
+  data.forEach(function(d) {
+    var amt = parseFloat(d.amount) || 0;
+    var r = parseFloat(d.rate) || rate();
+
+    if (d.type === 'income') cashIn += amt;
+    else if (d.type === 'expense') cashOut += amt;
+    else if (d.type === 'loan_give') { cashOut += amt; lentTotal += amt; }
+    else if (d.type === 'loan_take') { cashIn += amt; debtTotal += amt; }
+    else if (d.type === 'loan_back') { cashIn += amt; lentTotal -= amt; }
+    else if (d.type === 'loan_repay') { cashOut += amt; debtTotal -= amt; }
+    else if (d.type === 'trade_deposit') { cashOut += (amt * r); tradeBal += amt; }
+    else if (d.type === 'trade_withdraw') { cashIn += (amt * r); tradeBal -= amt; }
+    else if (d.type === 'trade_profit') { tradeBal += amt; tradeProfit += amt; }
+    else if (d.type === 'trade_loss') { tradeBal -= amt; tradeLoss += amt; }
+  });
+
+  return {
+    pocketBalance: cashIn - cashOut,
+    lentTotal: Math.max(0, lentTotal),
+    debtTotal: Math.max(0, debtTotal),
+    tradeBal: tradeBal,
+    tradeProfit: tradeProfit,
+    tradeLoss: tradeLoss,
+    tradeNet: tradeProfit - tradeLoss
+  };
+}
+
+function getKhataProfiles() {
+  var map = {};
+  data.forEach(function(d) {
+    if (!d.person) return;
+    var p = d.person.trim();
+    if (!map[p]) map[p] = { name: p, balance: 0, logs: [] };
+    var amt = parseFloat(d.amount) || 0;
+    if (d.type === 'loan_give') map[p].balance += amt;
+    else if (d.type === 'loan_back') map[p].balance -= amt;
+    else if (d.type === 'loan_take') map[p].balance -= amt;
+    else if (d.type === 'loan_repay') map[p].balance += amt;
+    map[p].logs.push(d);
+  });
+  return Object.values(map);
+}
+
+/* Biometrics & Security */
+function getPin() { return ls('app_pin') || '4202'; }
+function hasFp() { return !!ls('fp_cred'); }
+
+async function enrollFp() {
+  try {
+    var chal = new Uint8Array(32);
+    crypto.getRandomValues(chal);
+    var cred = await navigator.credentials.create({
+      publicKey: {
+        challenge: chal,
+        rp: { name: 'Pocket Ledger' },
+        user: { id: new Uint8Array(16), name: 'user', displayName: 'User' },
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+        authenticatorSelection: { userVerification: 'required' },
+        timeout: 60000
+      }
+    });
+    ls('fp_cred', 'enabled');
+    toast('Fingerprint Activated');
+    render();
+  } catch(e) {
+    alert('Biometric registration was not completed.');
+  }
+}
+
+async function authFp() {
+  try {
+    var chal = new Uint8Array(32);
+    crypto.getRandomValues(chal);
+    var res = await navigator.credentials.get({
+      publicKey: { challenge: chal, userVerification: 'required', timeout: 60000 }
+    });
+    if (res) { state.unlocked = true; render(); }
+  } catch(e){}
+}
+
+function checkPin() {
+  var v = (document.getElementById('pin_field').value || '').trim();
+  if (v === getPin() || v === '4202') {
+    state.unlocked = true;
+    render();
+  } else {
+    alert('Invalid PIN code');
+    document.getElementById('pin_field').value = '';
+  }
+}
+
+function toast(m) {
+  var el = document.getElementById('toast');
+  el.textContent = m; el.style.opacity = '1';
+  clearTimeout(window.__t);
+  window.__t = setTimeout(function(){ el.style.opacity = '0'; }, 2200);
+}
+
+/* Modals */
+function openModal(type, prefillPerson) {
+  state.modal = { type: type, person: prefillPerson || '' };
+  render();
+}
+function closeModal() { state.modal = null; render(); }
+
+function submitEntry() {
+  var amt = parseFloat(document.getElementById('m_amt').value);
+  if (!(amt > 0)) { alert('Please enter an amount'); return; }
+  var note = (document.getElementById('m_note').value || '').trim();
+  var person = document.getElementById('m_person') ? document.getElementById('m_person').value.trim() : '';
+  var pair = document.getElementById('m_pair') ? document.getElementById('m_pair').value.trim() : '';
+
+  data.push({
+    id: Date.now(),
+    type: state.modal.type,
+    amount: amt,
+    person: person,
+    pair: pair,
+    note: note,
+    date: new Date().toISOString().slice(0, 10),
+    rate: rate()
+  });
+
+  save();
+  closeModal();
+  toast('Transaction Saved');
+}
+
+/* Render Views */
+function renderCashView(b) {
+  var txs = data.filter(function(d){ return d.type.indexOf('trade_') !== 0; }).reverse().slice(0, 10);
+  var html = '<div class="header"><div><h1>Pocket & Bank</h1><small>Personal Funds & Ledger</small></div>';
+  html += '<div><button class="ib" onclick="state.unlocked=false;render()">' + IC.lock + '</button></div></div>';
+
+  html += '<div class="gold-card">';
+  html += '<small>Net Liquid Balance</small>';
+  html += '<div class="amount ' + (b.pocketBalance < 0 ? 'red' : 'gold') + '">' + (b.pocketBalance < 0 ? '-' : '') + rs(b.pocketBalance) + '</div>';
+  html += '<div class="subtext">Auto-updates with loans, income, and expenses</div>';
+  html += '<div class="grid2">';
+  html += '<div class="pill"><small>Receivable (Owed to You)</small><b class="green">' + rs(b.lentTotal) + '</b></div>';
+  html += '<div class="pill"><small>Payable (You Owe)</small><b class="red">' + rs(b.debtTotal) + '</b></div>';
+  html += '</div></div>';
+
+  html += '<div class="action-grid">';
+  html += '<button class="btn-tile" onclick="openModal(\'income\')"><div class="tile-icon" style="background:rgba(16,185,129,0.15);color:var(--green)">' + IC.arrowUp + '</div><span>Add Income</span></button>';
+  html += '<button class="btn-tile" onclick="openModal(\'expense\')"><div class="tile-icon" style="background:rgba(244,63,94,0.15);color:var(--red)">' + IC.arrowDown + '</div><span>Add Expense</span></button>';
+  html += '<button class="btn-tile" onclick="openModal(\'loan_give\')"><div class="tile-icon" style="background:rgba(212,175,55,0.15);color:var(--gold)">' + IC.arrowDown + '</div><span>Give Loan</span></button>';
+  html += '<button class="btn-tile" onclick="openModal(\'loan_take\')"><div class="tile-icon" style="background:rgba(212,175,55,0.15);color:var(--gold)">' + IC.arrowUp + '</div><span>Take Loan</span></button>';
+  html += '</div>';
+
+  html += '<div class="card"><h3>Recent Pocket Activity</h3>';
+  if (!txs.length) html += '<div style="color:var(--muted);text-align:center;padding:16px 0;font-size:13px">No entries yet.</div>';
+  txs.forEach(function(t) {
+    var isPlus = (t.type === 'income' || t.type === 'loan_take' || t.type === 'loan_back');
+    html += '<div class="tx"><div class="mid"><b>' + esc(t.type.replace('_',' ').toUpperCase()) + (t.person ? ' &middot; ' + esc(t.person) : '') + '</b><small>' + t.date + (t.note ? ' - ' + esc(t.note) : '') + '</small></div>';
+    html += '<div class="end ' + (isPlus ? 'green' : 'red') + '">' + (isPlus ? '+' : '-') + rs(t.amount) + '</div></div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function renderTradingView(b) {
+  var trades = data.filter(function(d){ return d.type.indexOf('trade_') === 0; }).reverse().slice(0, 10);
+  var html = '<div class="header"><div><h1>Trading Account</h1><small>USD Capital & Performance</small></div>';
+  html += '<div><button class="ib" onclick="setConversionRate()"><b>$</b></button></div></div>';
+
+  html += '<div class="gold-card trading">';
+  html += '<small>Trading Portfolio</small>';
+  html += '<div class="amount ' + (b.tradeBal < 0 ? 'red' : 'green') + '">' + (b.tradeBal < 0 ? '-' : '') + usd(b.tradeBal) + '</div>';
+  html += '<div class="subtext">= ' + rs(b.tradeBal * rate()) + ' (Exchange Rate: Rs ' + rate() + '/$)</div>';
+  html += '<div class="grid2">';
+  html += '<div class="pill"><small>Realized Net P&L</small><b class="' + (b.tradeNet >= 0 ? 'green' : 'red') + '">' + (b.tradeNet >= 0 ? '+' : '-') + usd(b.tradeNet) + '</b></div>';
+  html += '<div class="pill"><small>Exchange Conversion</small><b>Rs ' + rate() + '</b></div>';
+  html += '</div></div>';
+
+  html += '<div class="action-grid">';
+  html += '<button class="btn-tile" onclick="openModal(\'trade_profit\')"><div class="tile-icon" style="background:rgba(16,185,129,0.15);color:var(--green)">' + IC.arrowUp + '</div><span>Profit ($)</span></button>';
+  html += '<button class="btn-tile" onclick="openModal(\'trade_loss\')"><div class="tile-icon" style="background:rgba(244,63,94,0.15);color:var(--red)">' + IC.arrowDown + '</div><span>Loss ($)</span></button>';
+  html += '<button class="btn-tile" onclick="openModal(\'trade_deposit\')"><div class="tile-icon" style="background:rgba(59,130,246,0.15);color:#60a5fa">' + IC.arrowUp + '</div><span>Deposit ($)</span></button>';
+  html += '<button class="btn-tile" onclick="openModal(\'trade_withdraw\')"><div class="tile-icon" style="background:rgba(212,175,55,0.15);color:var(--gold)">' + IC.arrowDown + '</div><span>Withdraw ($)</span></button>';
+  html += '</div>';
+
+  html += '<div class="card"><h3>Trade Logs</h3>';
+  if (!trades.length) html += '<div style="color:var(--muted);text-align:center;padding:16px 0;font-size:13px">No trades recorded.</div>';
+  trades.forEach(function(t) {
+    var isPlus = (t.type === 'trade_profit' || t.type === 'trade_deposit');
+    html += '<div class="tx"><div class="mid"><b>' + esc(t.type.replace('trade_','').toUpperCase()) + (t.pair ? ' &middot; ' + esc(t.pair) : '') + '</b><small>' + t.date + (t.note ? ' - ' + esc(t.note) : '') + '</small></div>';
+    html += '<div class="end ' + (isPlus ? 'green' : 'red') + '">' + (isPlus ? '+' : '-') + usd(t.amount) + '</div></div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function setConversionRate() {
+  var r = prompt('Set Dollar to PKR Conversion Rate:', rate());
+  if (r && parseFloat(r) > 0) {
+    ls('usd_rate', r);
+    toast('Rate set to Rs ' + r);
+    render();
+  }
+}
+
+function renderKhataView() {
+  var profiles = getKhataProfiles();
+  var html = '<div class="header"><div><h1>Khata Ledger</h1><small>Individual Profiles</small></div>';
+  html += '<div><button class="ib" onclick="openModal(\'loan_give\')"><b>+</b></button></div></div>';
+
+  if (!profiles.length) {
+    html += '<div class="card" style="text-align:center;padding:30px 16px;color:var(--muted)">No accounts in ledger. Use Give/Take Loan to start.</div>';
+    return html;
+  }
+
+  profiles.forEach(function(p) {
+    var isOwedToMe = p.balance > 0;
+    var isDebt = p.balance < 0;
+    html += '<div class="profile-card">';
+    html += '<div class="top-row">';
+    html += '<div class="avatar">' + esc(p.name.charAt(0).toUpperCase()) + '</div>';
+    html += '<div style="flex:1"><b>' + esc(p.name) + '</b><small style="display:block;color:var(--muted)">' + p.logs.length + ' transactions</small></div>';
+    html += '<div style="text-align:right">';
+    if (isOwedToMe) {
+      html += '<span class="badge" style="background:rgba(16,185,129,0.12);color:var(--green)">To Receive</span>';
+      html += '<div style="font-size:16px;font-weight:800;color:var(--green);margin-top:2px">' + rs(p.balance) + '</div>';
+    } else if (isDebt) {
+      html += '<span class="badge" style="background:rgba(244,63,94,0.12);color:var(--red)">To Pay</span>';
+      html += '<div style="font-size:16px;font-weight:800;color:var(--red);margin-top:2px">' + rs(Math.abs(p.balance)) + '</div>';
+    } else {
+      html += '<span class="badge" style="background:rgba(255,255,255,0.08);color:var(--muted)">Settled</span>';
+      html += '<div style="font-size:16px;font-weight:800;color:#fff;margin-top:2px">Rs 0</div>';
+    }
+    html += '</div></div>';
+
+    if (p.balance !== 0) {
+      html += '<div style="display:flex;gap:8px;margin-top:10px">';
+      if (isOwedToMe) {
+        html += '<button class="btn-secondary" style="margin:0;padding:10px" onclick="openModal(\'loan_back\',\'' + esc(p.name) + '\')">Received Payment</button>';
+      } else {
+        html += '<button class="btn-secondary" style="margin:0;padding:10px" onclick="openModal(\'loan_repay\',\'' + esc(p.name) + '\')">Pay Debt Back</button>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+  });
+  return html;
+}
+
+function renderModal() {
+  if (!state.modal) return '';
+  var m = state.modal;
+  var isTrade = m.type.indexOf('trade_') === 0;
+  var isKhata = m.type.indexOf('loan_') === 0;
+
+  var title = 'Add Entry';
+  if (m.type === 'income') title = 'Add Income';
+  else if (m.type === 'expense') title = 'Add Expense';
+  else if (m.type === 'loan_give') title = 'Give Loan (Udhar Diya)';
+  else if (m.type === 'loan_take') title = 'Take Loan (Udhar Liya)';
+  else if (m.type === 'loan_back') title = 'Loan Received Back';
+  else if (m.type === 'loan_repay') title = 'Return Borrowed Money';
+  else if (m.type === 'trade_profit') title = 'Trading Profit ($)';
+  else if (m.type === 'trade_loss') title = 'Trading Loss ($)';
+  else if (m.type === 'trade_deposit') title = 'Deposit to Trading ($)';
+  else if (m.type === 'trade_withdraw') title = 'Withdraw from Trading ($)';
+
+  var h = '<div style="position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);z-index:90;display:flex;align-items:center;justify-content:center;padding:16px">';
+  h += '<div class="card" style="width:100%;max-width:420px;margin:0;border-color:var(--gold)">';
+  h += '<h2 style="font-size:18px;margin:0 0 16px;color:var(--gold)">' + title + '</h2>';
+  h += '<input id="m_amt" type="number" inputmode="decimal" placeholder="' + (isTrade ? 'Amount in USD ($)' : 'Amount in PKR (Rs)') + '" autofocus>';
+  if (isKhata) {
+    h += '<input id="m_person" type="text" placeholder="Person Name" value="' + esc(m.person) + '">';
+  }
+  if (isTrade && (m.type === 'trade_profit' || m.type === 'trade_loss')) {
+    h += '<input id="m_pair" type="text" placeholder="Symbol / Pair (e.g. XAUUSD)">';
+  }
+  h += '<input id="m_note" type="text" placeholder="Note (optional)">';
+  h += '<button class="btn-primary" onclick="submitEntry()">Save Entry</button>';
+  h += '<button class="btn-secondary" onclick="closeModal()">Cancel</button>';
+  h += '</div></div>';
+  return h;
+}
+
+function render() {
+  var lockEl = document.getElementById('lock');
+  var navEl = document.getElementById('nav');
+  var appEl = document.getElementById('app');
+
+  if (!state.unlocked) {
+    appEl.innerHTML = '';
+    navEl.style.display = 'none';
+    lockEl.style.display = 'flex';
+    var lockHtml = '<div class="lock-icon">' + IC.lock + '</div>';
+    lockHtml += '<h2 style="margin:0 0 8px;font-size:22px;color:#fff">Pocket Ledger</h2>';
+    lockHtml += '<p style="margin:0 0 20px;color:var(--muted);font-size:13px">Enter PIN 4202 or use biometrics</p>';
+    lockHtml += '<input id="pin_field" class="pin-input" type="password" placeholder="••••" autofocus>';
+    lockHtml += '<button class="btn-primary" style="max-width:260px;margin-bottom:12px" onclick="checkPin()">Unlock</button>';
+    if (hasFp()) {
+      lockHtml += '<button class="btn-secondary" style="max-width:260px" onclick="authFp()">' + IC.fp + ' Use Fingerprint</button>';
+    } else {
+      lockHtml += '<button class="btn-secondary" style="max-width:260px" onclick="enrollFp()">' + IC.fp + ' Setup Fingerprint</button>';
+    }
+    lockEl.innerHTML = lockHtml;
+    setTimeout(function() {
+      var f = document.getElementById('pin_field');
+      if (f) {
+        f.focus();
+        f.onkeydown = function(e){ if (e.key === 'Enter') checkPin(); };
+      }
+      if (hasFp()) authFp();
+    }, 100);
+    return;
+  }
+
+  lockEl.style.display = 'none';
+  navEl.style.display = 'flex';
+
+  var b = getBalances();
+  var content = '';
+  if (state.tab === 'cash') content = renderCashView(b);
+  else if (state.tab === 'trading') content = renderTradingView(b);
+  else if (state.tab === 'khata') content = renderKhataView();
+
+  appEl.innerHTML = content + renderModal();
+
+  var tabs = [
+    { id: 'cash', label: 'Cash / Pocket', icon: IC.wallet },
+    { id: 'trading', label: 'Trading', icon: IC.trading },
+    { id: 'khata', label: 'Khata Ledger', icon: IC.khata }
+  ];
+
+  navEl.innerHTML = tabs.map(function(t) {
+    return '<button class="' + (state.tab === t.id ? 'active' : '') + '" onclick="state.tab=\'' + t.id + '\';render()">' + t.icon + '<span>' + t.label + '</span></button>';
+  }).join('');
+}
+
+function boot() {
+  load();
+  render();
+}
+boot();
+</script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+
+var firebaseConfig = {
+  apiKey: "AIzaSyD1T9whAGhk1GNVLEhJ-cgCZVz-EOhq1Nc",
+  authDomain: "money-tracker-bd67a.firebaseapp.com",
+  databaseURL: "https://money-tracker-bd67a-default-rtdb.firebaseio.com",
+  projectId: "money-tracker-bd67a",
+  storageBucket: "money-tracker-bd67a.firebasestorage.app",
+  messagingSenderId: "971828439353",
+  appId: "1:971828439353:web:d67b72a0d77029bc36e0e8"
+};
+var app = initializeApp(firebaseConfig), auth = getAuth(app), db = getDatabase(app);
+
+window.Sync = {
+  signIn: function () { signInWithPopup(auth, new GoogleAuthProvider()); },
+  signOut: function () { signOut(auth); },
+  apply: function (u) { if(auth.currentUser) update(ref(db, "users/" + auth.currentUser.uid), u); }
+};
+
+onAuthStateChanged(auth, function (u) {
+  if (u) {
+    onValue(ref(db, "users/" + u.uid), function (s) {
+      var v = s.val() || {};
+      if (v.entries) {
+        data = Array.isArray(v.entries) ? v.entries : Object.values(v.entries);
+        ls('ledger_data', JSON.stringify(data));
+        render();
+      }
+    });
+  }
+});
+</script>
+</body>
+</html>
